@@ -60,7 +60,7 @@ namespace motioncam {
         const std::vector<Timestamp> getFrames() const;
         
         // Load a single frame and its metadata.
-        void loadFrame(const Timestamp timestamp, std::vector<uint8_t>& outData, nlohmann::json& outMetadata);
+        nlohmann::json loadFrameMetadata(const Timestamp timestamp);
         
         // Audio sample rate
         int audioSampleRateHz() const;

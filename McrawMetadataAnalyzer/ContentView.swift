@@ -11,7 +11,9 @@ internal import UniformTypeIdentifiers
 
 struct ContentView: View {
     @State private var isDropTargeted = false
-    @State private var decodedMetadata: String = ""
+    @State private var containerMetadata: String = ""
+    @State private var firstFrameMetadata: String = ""
+    @State private var lastFrameMetadata: String = ""
     @State private var errorMessage: String?
     @State private var hasFile = false
     
@@ -57,17 +59,25 @@ struct ContentView: View {
                     // Optional: Add file browser support
                 }
             
-            // Display decoded metadata or error
-            if !decodedMetadata.isEmpty {
+            // Display metadata sections
+            if !containerMetadata.isEmpty || !firstFrameMetadata.isEmpty || !lastFrameMetadata.isEmpty {
                 ScrollView {
-                    Text(decodedMetadata)
-                        .font(.system(.body, design: .monospaced))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding()
-                        .background(Color.black.opacity(0.05))
-                        .cornerRadius(8)
+                    VStack(alignment: .leading, spacing: 16) {
+                        if !containerMetadata.isEmpty {
+                            MetadataSection(title: "Container Metadata", content: containerMetadata)
+                        }
+
+                        if !firstFrameMetadata.isEmpty {
+                            MetadataSection(title: "First Frame Metadata", content: firstFrameMetadata)
+                        }
+
+                        if !lastFrameMetadata.isEmpty {
+                            MetadataSection(title: "Last Frame Metadata", content: lastFrameMetadata)
+                        }
+                    }
+                    .padding()
                 }
-                .frame(maxHeight: 300)
+                .frame(maxHeight: 500)
             } else if let errorMessage = errorMessage {
                 Text("Error: \(errorMessage)")
                     .foregroundColor(.red)
@@ -101,19 +111,88 @@ struct ContentView: View {
     }
     
     private func decodeFile(at url: URL) {
-        // Create decoder instance
-        let decoder = Motioncam.motioncam.Decoder(std.string(url.path))
-        
-        // Get container metadata
-        let metadata = decoder.getContainerMetadata()
-        
-        // Convert JSON to string for display
-        let jsonString = String(metadata.dump())
-        
-        DispatchQueue.main.async {
-            self.decodedMetadata = jsonString
-            self.errorMessage = nil
-            self.hasFile = true
+        do {
+            // Create decoder instance
+            var decoder = Motioncam.motioncam.Decoder(std.string(url.path))
+
+            // Get container metadata
+            let containerMeta = decoder.getContainerMetadata()
+            let containerJson = String(containerMeta.dump())
+
+            // Get all frame timestamps
+            let timestamps = decoder.getFrames()
+
+            // Get first frame metadata
+            var firstFrameJson = ""
+            if !timestamps.isEmpty {
+                var firstTimestamp = timestamps[0]
+                var outMetadata = decoder.loadFrameMetadata(firstTimestamp)
+                firstFrameJson = String(outMetadata.dump())
+            }
+
+            // Get last frame metadata
+            var lastFrameJson = ""
+            if !timestamps.isEmpty {
+                let lastTimestamp = timestamps[timestamps.count - 1]
+                var outMetadata = decoder.loadFrameMetadata(lastTimestamp)
+                lastFrameJson = String(outMetadata.dump())
+            }
+
+            DispatchQueue.main.async {
+                self.containerMetadata = formatJSON(containerJson)
+                self.firstFrameMetadata = formatJSON(firstFrameJson)
+                self.lastFrameMetadata = formatJSON(lastFrameJson)
+                self.errorMessage = nil
+                self.hasFile = true
+            }
+        } catch {
+            DispatchQueue.main.async {
+                self.errorMessage = error.localizedDescription
+                self.hasFile = false
+            }
+        }
+    }
+
+    private func formatJSON(_ jsonString: String) -> String {
+        guard !jsonString.isEmpty else { return "" }
+
+        // Parse and reformat JSON for better readability
+        guard let data = jsonString.data(using: .utf8),
+              let jsonObject = try? JSONSerialization.jsonObject(with: data, options: []),
+              let formattedData = try? JSONSerialization.data(withJSONObject: jsonObject, options: [.prettyPrinted, .sortedKeys]),
+              let formattedString = String(data: formattedData, encoding: .utf8) else {
+            return jsonString
+        }
+
+        return formattedString
+    }
+}
+
+struct MetadataSection: View {
+    let title: String
+    let content: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.headline)
+                .fontWeight(.semibold)
+                .foregroundColor(.primary)
+                .padding(.horizontal, 8)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                Text(content)
+                    .font(.system(.body, design: .monospaced))
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color(NSColor.textBackgroundColor))
+                            .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
+                    )
+            }
         }
     }
 }

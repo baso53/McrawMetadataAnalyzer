@@ -176,7 +176,7 @@ namespace motioncam {
         return *mAudioLoader;
     }
     
-    void Decoder::loadFrame(const Timestamp timestamp, std::vector<uint8_t>& outData, nlohmann::json& outMetadata) {
+    nlohmann::json Decoder::loadFrameMetadata(const Timestamp timestamp) {
         if(mFrameOffsetMap.find(timestamp) == mFrameOffsetMap.end())
             throw IOException("Frame not found (timestamp: " + std::to_string(timestamp) + ")");
         
@@ -206,27 +206,7 @@ namespace motioncam {
         read(metadataJson.data(), metadataItem.size);
         
         std::string metadataString = std::string(metadataJson.begin(), metadataJson.end());
-        outMetadata = nlohmann::json::parse(metadataString);        
-        
-        const int width = outMetadata["width"];
-        const int height = outMetadata["height"];
-        const int compressionType = outMetadata["compressionType"];
-                    
-        // Decompress the buffer
-        const size_t outputSizeBytes = sizeof(uint16_t) * width*height;
-        outData.resize(outputSizeBytes);
-        
-        if(compressionType == MOTIONCAM_COMPRESSION_TYPE) {
-            if(raw::Decode(reinterpret_cast<uint16_t*>(outData.data()), width, height, mTmpBuffer.data(), mTmpBuffer.size()) <= 0)
-                throw IOException("Failed to uncompress frame");
-        }
-        else if(compressionType == MOTIONCAM_COMPRESSION_TYPE_LEGACY) {
-            if(raw::DecodeLegacy(reinterpret_cast<uint16_t*>(outData.data()), width, height, mTmpBuffer.data(), mTmpBuffer.size()) <= 0)
-                throw IOException("Failed to uncompress legacy frame");
-        }
-        else {
-            throw IOException("Invalid compression type");
-        }
+        return nlohmann::json::parse(metadataString);
     }
 
     void Decoder::readIndex() {
