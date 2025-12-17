@@ -145,11 +145,11 @@ namespace motioncam {
         mAudioLoader = std::make_unique<AudioChunkLoaderImpl>(mFile.get(), mAudioOffsets);
     }
     
-    const std::vector<Timestamp>& Decoder::getFrames() const {
+    const std::vector<Timestamp> Decoder::getFrames() const {
         return mFrameList;
     }
     
-    const nlohmann::json& Decoder::getContainerMetadata() const {
+    const nlohmann::json Decoder::getContainerMetadata() const {
         return mMetadata;
     }
     

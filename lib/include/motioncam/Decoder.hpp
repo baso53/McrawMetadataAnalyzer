@@ -54,10 +54,10 @@ namespace motioncam {
         // No explicit destructor needed - file is automatically closed by unique_ptr
                 
         // Get container metadata
-        const nlohmann::json& getContainerMetadata() const;
+        const nlohmann::json getContainerMetadata() const;
         
         // Get all frame timestamps in container
-        const std::vector<Timestamp>& getFrames() const;
+        const std::vector<Timestamp> getFrames() const;
         
         // Load a single frame and its metadata.
         void loadFrame(const Timestamp timestamp, std::vector<uint8_t>& outData, nlohmann::json& outMetadata);
