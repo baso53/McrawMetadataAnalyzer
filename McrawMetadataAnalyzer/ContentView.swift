@@ -10,7 +10,7 @@ import Motioncam
 
 struct ContentView: View {
     var body: some View {
-        let ops = Motioncam.motioncam.Decoder
+        let ops = Motioncam.motioncam.Decoder(std.string(""))
         
         VStack {
             Image(systemName: "globe")

@@ -94,23 +94,18 @@ namespace motioncam {
     
     //
 
-    Decoder::Decoder(FILE* file) : mFile(file) {
+    Decoder::Decoder(FILE* file) : mFile(file, &std::fclose) {
         if(!mFile)
             throw IOException("Invalid file");
             
         init();
     }
 
-    Decoder::Decoder(const std::string& path) : mFile(std::fopen(path.c_str(), "rb")) {
+    Decoder::Decoder(const std::string& path) : mFile(std::fopen(path.c_str(), "rb"), &std::fclose) {
         if(!mFile)
             throw IOException("Failed to open " + path);
             
         init();
-    }
-    
-    Decoder::~Decoder() {
-        if(mFile)
-            std::fclose(mFile);
     }
     
     void Decoder::init() {
@@ -147,7 +142,7 @@ namespace motioncam {
         readExtra();
         
         // Create audio loader
-        mAudioLoader = std::make_unique<AudioChunkLoaderImpl>(mFile, mAudioOffsets);
+        mAudioLoader = std::make_unique<AudioChunkLoaderImpl>(mFile.get(), mAudioOffsets);
     }
     
     const std::vector<Timestamp>& Decoder::getFrames() const {
@@ -169,8 +164,8 @@ namespace motioncam {
     void Decoder::loadAudio(std::vector<AudioChunk>& outAudioChunks) {
         for(const auto& o : mAudioOffsets) {
             AudioChunk chunk;
-            
-            if(!loadAudioChunk(mFile, o, chunk))
+
+            if(!loadAudioChunk(mFile.get(), o, chunk))
                 continue;
 
             outAudioChunks.emplace_back(chunk);
@@ -186,8 +181,8 @@ namespace motioncam {
             throw IOException("Frame not found (timestamp: " + std::to_string(timestamp) + ")");
         
         int64_t offset = mFrameOffsetMap.at(timestamp).offset;
-        
-        if(FSEEK(mFile, offset, SEEK_SET) != 0)
+
+        if(FSEEK(mFile.get(), offset, SEEK_SET) != 0)
             throw IOException("Invalid offset");
         
         Item bufferItem{};
@@ -236,7 +231,7 @@ namespace motioncam {
 
     void Decoder::readIndex() {
         // Seek to index item
-        if(FSEEK(mFile, -static_cast<long>(sizeof(BufferIndex) + sizeof(Item)), SEEK_END) != 0)
+        if(FSEEK(mFile.get(), -static_cast<long>(sizeof(BufferIndex) + sizeof(Item)), SEEK_END) != 0)
             throw IOException("Failed to get end chunk");
 
         Item bufferIndexItem{};
@@ -255,7 +250,7 @@ namespace motioncam {
         mOffsets.resize(index.numOffsets);
         
         // Read the index
-        if(FSEEK(mFile, index.indexDataOffset, SEEK_SET) != 0) {
+        if(FSEEK(mFile.get(), index.indexDataOffset, SEEK_SET) != 0) {
             throw IOException("Invalid index");
             return;
         }
@@ -284,18 +279,18 @@ namespace motioncam {
         
         auto curOffset = mOffsets[mOffsets.size() - 1].offset;
 
-        if(FSEEK(mFile, curOffset, SEEK_SET) != 0)
+        if(FSEEK(mFile.get(), curOffset, SEEK_SET) != 0)
             return;
 
         while(true) {
             Item item{};
 
-            if(std::fread(&item, sizeof(Item), 1, mFile) != 1)
+            if(std::fread(&item, sizeof(Item), 1, mFile.get()) != 1)
                 break;
             
             // Skip things we don't need
             if(item.type == Type::BUFFER || item.type == Type::METADATA || item.type == Type::AUDIO_DATA || item.type == Type::AUDIO_DATA_METADATA) {
-                if(FSEEK(mFile, item.size, SEEK_CUR) != 0)
+                if(FSEEK(mFile.get(), item.size, SEEK_CUR) != 0)
                     break;
             }
             else if(item.type == Type::AUDIO_INDEX) {
@@ -315,7 +310,7 @@ namespace motioncam {
     }
     
     void Decoder::read(void* data, size_t size, size_t items) const {
-        ::motioncam::read(mFile, data, size, items);
+        ::motioncam::read(mFile.get(), data, size, items);
     }
 
 } // namespace motioncam

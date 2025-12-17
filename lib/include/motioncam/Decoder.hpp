@@ -23,6 +23,8 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <memory>
+#include <cstdio>
 
 namespace motioncam {
     typedef int64_t Timestamp;
@@ -47,9 +49,9 @@ namespace motioncam {
     class Decoder {
     public:
         Decoder(const std::string& path);
-        Decoder(FILE* file);
-        
-        ~Decoder();
+        explicit Decoder(FILE* file);
+
+        // No explicit destructor needed - file is automatically closed by unique_ptr
                 
         // Get container metadata
         const nlohmann::json& getContainerMetadata() const;
@@ -78,10 +80,9 @@ namespace motioncam {
         void readIndex();
         void reindexOffsets();
         void readExtra();
-        void uncompress(const std::vector<uint8_t>& src, std::vector<uint8_t>& dst);
         
     private:
-        FILE* mFile;
+        std::unique_ptr<FILE, decltype(&std::fclose)> mFile;
         std::vector<BufferOffset> mOffsets;
         std::vector<BufferOffset> mAudioOffsets;
         std::map<Timestamp, BufferOffset> mFrameOffsetMap;
