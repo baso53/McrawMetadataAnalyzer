@@ -17,13 +17,28 @@ struct ContentView: View {
     @State private var errorMessage: String?
     @State private var hasFile = false
     @State private var fileName: String = ""
+    @State private var isShowingFileImporter = false
     
     var body: some View {
         VStack(spacing: 20) {
-            Text(hasFile ? fileName : "MCRAW Metadata Analyzer")
-                .font(.largeTitle)
-                .fontWeight(.bold)
-                .padding(.top)
+            HStack {
+                Text(hasFile ? fileName : "MCRAW Metadata Analyzer")
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+
+                Spacer()
+
+                if hasFile {
+                    Button(action: { isShowingFileImporter = true }) {
+                        Image(systemName: "doc.badge.plus")
+                            .font(.title2)
+                            .foregroundColor(.blue)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .help("Open another file")
+                }
+            }
+            .padding(.top)
 
             if hasFile {
                 Text("File loaded successfully!")
@@ -59,7 +74,7 @@ struct ContentView: View {
                         handleDrop(providers: providers)
                     }
                     .onTapGesture {
-                        // Optional: Add file browser support
+                        isShowingFileImporter = true
                     }
             }
 
@@ -163,6 +178,36 @@ struct ContentView: View {
         .onDrop(of: [.fileURL], isTargeted: $isDropTargeted) { providers in
             // Allow dropping files even when file is loaded
             handleDrop(providers: providers)
+        }
+        .fileImporter(
+            isPresented: $isShowingFileImporter,
+            allowedContentTypes: [.data],
+            allowsMultipleSelection: false
+        ) { result in
+            switch result {
+            case .success(let urls):
+                guard let url = urls.first,
+                      url.pathExtension.lowercased() == "mcraw" else {
+                    DispatchQueue.main.async {
+                        self.errorMessage = "Please select a valid MCRAW file"
+                    }
+                    return
+                }
+                decodeFile(at: url)
+            case .failure(let error):
+                DispatchQueue.main.async {
+                    self.errorMessage = error.localizedDescription
+                }
+            }
+        }
+        .onOpenURL { url in
+            // Handle opening .mcraw files from Finder or other apps
+            if url.pathExtension.lowercased() == "mcraw" {
+                decodeFile(at: url)
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .openFile)) { _ in
+            isShowingFileImporter = true
         }
     }
 
