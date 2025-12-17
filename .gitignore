@@ -1,0 +1,144 @@
+# Xcode
+#
+.DS_Store
+build/
+./build/
+./**/build/
+*/**/build/
+DerivedData/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata/
+*.xccheckout
+*.moved-aside
+*.xcuserstate
+
+# Swift
+#
+.swiftpm/
+.build/
+Package.resolved
+
+# CocoaPods
+#
+Pods/
+Podfile.lock
+
+# Carthage
+#
+Carthage/Build/
+
+# fastlane
+#
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+
+# Archives
+#
+*.xcarchive
+
+# Xcode Server
+#
+integration.app
+
+# AppCenter
+#
+appcenter-pre-build.sh
+appcenter-post-clone.sh
+
+# CMake
+#
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+CTestTestfile.cmake
+Makefile
+install_manifest.txt
+
+# Compilation database
+compile_commands.json
+
+# Other macOS
+#
+*.swp
+*.swo
+.idea/
+*.iml
+
+# User-generated
+#
+*.orig
+
+# Misc
+#
+*.log
+*.app
+*.ipa
+*.dSYM
+*.profdata
+*.hmap
+
+# Playgrounds
+#
+timeline.xctimeline
+playground.xcworkspace
+
+# Swift Package Manager
+#
+.swiftpm/
+.build/
+Sources/**/.DS_Store
+
+# SPM Xcode project/swift == 4.2
+.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata/
+!*.xcodeproj/xcshareddata/WorkspaceSettings.xcsettings
+*.xcodeproj/xcshareddata/xcschemes/*.xcuserdatad
+*.xcodeproj/xcuserdata
+
+# SwiftLint / SwiftFormat
+#
+.swiftlint.yml
+.swiftformat
+
+# Visual Studio Code
+#
+.vscode/
+
+# Test result bundles
+#
+*.xcresult/
+
+# Temporary files
+~
+.#*
+*.tmp
+
+# Crashlytics
+#
+fabric.properties
+
+# Ruby settings
+/.bundle
+/Gemfile.lock
+
+# SPM
+/.build/
+
+# Other
+*.so
+*.dylib
+*.bin
+*.obj
+*.elf
+*.exe
+*.dll

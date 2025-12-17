@@ -6,9 +6,12 @@
 //
 
 import SwiftUI
+import Motioncam
 
 struct ContentView: View {
     var body: some View {
+        let ops = Motioncam.motioncam.Decoder
+        
         VStack {
             Image(systemName: "globe")
                 .imageScale(.large)
